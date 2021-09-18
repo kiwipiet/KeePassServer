@@ -87,7 +87,7 @@ namespace KeePassLib.Security
 		{
 			get
 			{
-#if KeePassLibSD
+#if KeePassLibSD || KeePassNetCore
 				return false;
 #else
 				bool? ob = g_obProtectedMemorySupported;
@@ -462,4 +462,21 @@ namespace KeePassLib.Security
 			return pbHash;
 		}
 	}
+#if KeePassNetCore
+	public class ProtectedMemory
+    {
+        public static void Protect(byte[] data, MemoryProtectionScope memoryProtectionScope)
+        {
+        }
+
+        public static void Unprotect(byte[] data, MemoryProtectionScope memoryProtectionScope)
+        {
+        }
+    }
+
+    public enum MemoryProtectionScope
+    {
+        SameProcess
+    }
+#endif
 }

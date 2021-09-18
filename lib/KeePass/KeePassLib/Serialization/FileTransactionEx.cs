@@ -202,7 +202,7 @@ namespace KeePassLib.Serialization
 
 			bool bMadeUnhidden = UrlUtil.UnhideFile(m_iocBase.Path);
 
-#if !KeePassUAP
+#if !KeePassUAP && !KeePassNetCore
 			// 'All' includes 'Audit' (SACL), which requires SeSecurityPrivilege,
 			// which we usually don't have and therefore get an exception;
 			// trying to set 'Owner' or 'Group' can result in an
@@ -221,7 +221,7 @@ namespace KeePassLib.Serialization
 				// FileAttributes faBase = FileAttributes.Normal;
 				try
 				{
-#if !KeePassUAP
+#if !KeePassUAP && !KeePassNetCore
 					FileAttributes faBase = File.GetAttributes(m_iocBase.Path);
 					bEfsEncrypted = ((long)(faBase & FileAttributes.Encrypted) != 0);
 					try { if(bEfsEncrypted) File.Decrypt(m_iocBase.Path); } // For TxF
@@ -229,7 +229,7 @@ namespace KeePassLib.Serialization
 #endif
 					otCreation = File.GetCreationTimeUtc(m_iocBase.Path);
 					sStat = SimpleStat.Get(m_iocBase.Path);
-#if !KeePassUAP
+#if !KeePassUAP && !KeePassNetCore
 					// May throw with Mono
 					FileSecurity sec = File.GetAccessControl(m_iocBase.Path, acs);
 					if(sec != null) pbSec = sec.GetSecurityDescriptorBinaryForm();
@@ -246,7 +246,12 @@ namespace KeePassLib.Serialization
 				if(bBaseExists) IOConnection.DeleteFile(m_iocBase);
 				IOConnection.RenameFile(m_iocTemp, m_iocBase);
 			}
-			else { Debug.Assert(pbSec != null); } // TxF success => NTFS => has ACL
+            else
+            {
+#if !KeePassNetCore
+                Debug.Assert(pbSec != null);
+#endif
+            } // TxF success => NTFS => has ACL
 
 			try
 			{
@@ -259,13 +264,12 @@ namespace KeePassLib.Serialization
 
 				if(sStat != null) SimpleStat.Set(m_iocBase.Path, sStat);
 
-#if !KeePassUAP
+#if !KeePassUAP && !KeePassNetCore
 				if(bEfsEncrypted)
 				{
 					try { File.Encrypt(m_iocBase.Path); }
 					catch(Exception) { Debug.Assert(false); }
 				}
-
 				// File.SetAccessControl(m_iocBase.Path, secPrev);
 				// Directly calling File.SetAccessControl with the previous
 				// FileSecurity object does not work; the binary form
